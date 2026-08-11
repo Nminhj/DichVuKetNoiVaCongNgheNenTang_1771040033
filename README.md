@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # FIT4110 – Buổi 1
 ## Chuẩn bị môi trường và xác định Service Boundary
 
@@ -88,3 +89,7 @@ evidence/buoi-01/
 - Không còn `[FAIL]` trong `smoke-test-result.txt`, hoặc lỗi được giảng viên chấp nhận và giải thích trong `known-issues.md`.
 - `service-boundary.md` có Actor, Responsibility, Out of scope, Input, Output, Provider, Consumer, API/Event dự kiến và sơ đồ.
 - Chạy `verify_submission.py` nhận kết quả `PASS`.
+=======
+# DichVuKetNoiVaCongNgheNenTang_1771040033
+
+
