@@ -1,0 +1,5 @@
+Git: git version 2.52.0.windows.1
+Docker: unavailable in this environment
+Docker Compose: unavailable in this environment
+Node.js: v24.12.0
+Python: Python 3.12.5

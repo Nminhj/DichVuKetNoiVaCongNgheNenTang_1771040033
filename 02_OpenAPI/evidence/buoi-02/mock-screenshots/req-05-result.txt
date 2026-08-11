@@ -1,0 +1,27 @@
+﻿curl.exe :   % Total    % Received % Xferd  Average Speed  Time    Time    
+Time   Current
+At line:1 char:1198
++ ... oding utf8; curl.exe -i -H "Authorization: Bearer dummy-token" http:/ ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (  % Total    % ... Time   Current 
+   :String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+                                 Dload  Upload  Total   Spent   Left   Speed
+
+  0      0   0      0   0      0      0      0                              0
+100    272 100    272   0      0   1016      0                              0
+100    272 100    272   0      0   1014      0                              0
+100    272 100    272   0      0   1013      0                              0
+HTTP/1.1 200 OK
+Access-Control-Allow-Origin: *
+Access-Control-Allow-Headers: *
+Access-Control-Allow-Credentials: true
+Access-Control-Expose-Headers: *
+Content-type: application/json
+Content-Length: 272
+Date: Tue, 11 Aug 2026 02:27:28 GMT
+Connection: keep-alive
+Keep-Alive: timeout=5
+
+{"detectionId":"0a2f7b39-8c3f-4f6d-bb3f-e2f4b37062d0","status":"COMPLETED","detectedAt":"2026-08-11T10:00:03Z","objects":[{"type":"person","confidence":0.93,"boundingBox":{"x":112,"y":56,"width":84,"height":220}}],"riskLevel":"MEDIUM","modelVersion":"v2.1.0","notes":null}

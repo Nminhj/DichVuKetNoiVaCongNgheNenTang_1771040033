@@ -1,0 +1,1 @@
+Git log could not be generated because this portfolio folder is not a Git repository in the current workspace copy.

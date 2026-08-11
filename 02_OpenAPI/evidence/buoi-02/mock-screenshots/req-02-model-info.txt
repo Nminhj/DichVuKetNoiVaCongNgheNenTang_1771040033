@@ -1,0 +1,27 @@
+﻿curl.exe :   % Total    % Received % Xferd  Average Speed  Time    Time    
+Time   Current
+At line:1 char:248
++ ... oding utf8; curl.exe -i -H "Authorization: Bearer dummy-token" http:/ ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (  % Total    % ... Time   Current 
+   :String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+                                 Dload  Upload  Total   Spent   Left   Speed
+
+  0      0   0      0   0      0      0      0                              0
+100    136 100    136   0      0    579      0                              0
+100    136 100    136   0      0    578      0                              0
+100    136 100    136   0      0    577      0                              0
+HTTP/1.1 200 OK
+Access-Control-Allow-Origin: *
+Access-Control-Allow-Headers: *
+Access-Control-Allow-Credentials: true
+Access-Control-Expose-Headers: *
+Content-type: application/json
+Content-Length: 136
+Date: Tue, 11 Aug 2026 02:27:27 GMT
+Connection: keep-alive
+Keep-Alive: timeout=5
+
+{"modelName":"campus-vision","modelVersion":"v2.1.0","supportedTypes":["person","vehicle","package"],"updatedAt":"2026-08-10T12:00:00Z"}

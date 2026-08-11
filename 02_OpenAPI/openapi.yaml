@@ -1,0 +1,506 @@
+openapi: 3.1.0
+info:
+  title: FIT4110 Lab 02 — Camera Stream ? AI Vision Contract
+  version: 1.0.0
+  description: |
+    REST contract for the Camera Stream ? AI Vision pair.
+    Consumer sends a frame or image reference to AI Vision, then polls for detection results.
+  contact:
+    name: FIT4110 Team
+    email: fit4110@example.edu.vn
+servers:
+  - url: http://localhost:4010
+    description: Local Prism mock server
+  - url: https://api.smartcampus.local
+    description: Campus production placeholder
+tags:
+  - name: health
+    description: Service health endpoints
+  - name: vision
+    description: AI Vision detection endpoints
+  - name: models
+    description: Vision model metadata
+security:
+  - bearerAuth: []
+paths:
+  /health:
+    get:
+      operationId: getHealth
+      summary: Check service health
+      description: Returns AI Vision service readiness and uptime.
+      tags: [health]
+      security: []
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthStatus'
+              examples:
+                healthy:
+                  value:
+                    status: ok
+                    service: ai-vision
+                    time: '2026-08-11T10:00:00Z'
+
+  /vision/detect:
+    post:
+      operationId: startVisionDetection
+      summary: Submit an image for AI vision detection
+      description: |
+        Consumer submits either a public image URL or inline base64-encoded image data.
+        AI Vision returns a detection identifier and a provisional result if immediate results are available.
+      tags: [vision]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VisionRequest'
+            examples:
+              imageUrl:
+                value:
+                  inputType: IMAGE_URL
+                  imageUrl: https://images.smartcampus.local/camera-01/frame-20260811-100000.jpg
+                  correlationId: c2f5f8ae-2f75-4f0f-9e7c-1c9b40f2a4b1
+              imageBase64:
+                value:
+                  inputType: IMAGE_BASE64
+                  imageBase64: iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9h...
+                  contentType: image/jpeg
+                  correlationId: 7b5e14d4-8fca-4e43-b3c7-1f3a5e4397f4
+      responses:
+        '201':
+          description: Detection request accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VisionDetectionAccepted'
+              examples:
+                accepted:
+                  value:
+                    detectionId: 0a2f7b39-8c3f-4f6d-bb3f-e2f4b37062d0
+                    status: PROCESSING
+                    receivedAt: '2026-08-11T10:00:00Z'
+                    modelVersion: v2.1.0
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /vision/detections/{detectionId}:
+    get:
+      operationId: getVisionDetectionResult
+      summary: Retrieve AI vision detection result
+      description: Gets the detection details and analysis produced for a previously submitted image.
+      tags: [vision]
+      parameters:
+        - $ref: '#/components/parameters/DetectionId'
+      responses:
+        '200':
+          description: Detection result found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VisionDetectionResult'
+              examples:
+                completed:
+                  value:
+                    detectionId: 0a2f7b39-8c3f-4f6d-bb3f-e2f4b37062d0
+                    status: COMPLETED
+                    detectedAt: '2026-08-11T10:00:03Z'
+                    objects:
+                      - type: person
+                        confidence: 0.93
+                        boundingBox:
+                          x: 112
+                          y: 56
+                          width: 84
+                          height: 220
+                    riskLevel: MEDIUM
+                    modelVersion: v2.1.0
+                    notes: null
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /vision/models/info:
+    get:
+      operationId: getVisionModelInfo
+      summary: Get current AI Vision model metadata
+      description: Returns the current model name, version, and supported detection capabilities.
+      tags: [models]
+      responses:
+        '200':
+          description: Model information
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VisionModelInfo'
+              examples:
+                currentModel:
+                  value:
+                    modelName: campus-vision
+                    modelVersion: v2.1.0
+                    supportedTypes:
+                      - person
+                      - vehicle
+                      - package
+                    updatedAt: '2026-08-10T12:00:00Z'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    DetectionId:
+      name: detectionId
+      in: path
+      required: true
+      description: UUID of the detection request.
+      schema:
+        type: string
+        format: uuid
+
+  schemas:
+    HealthStatus:
+      type: object
+      additionalProperties: false
+      required: [status, service, time]
+      properties:
+        status:
+          type: string
+          enum: [ok]
+          description: Service status.
+          example: ok
+        service:
+          type: string
+          description: Service name.
+          example: ai-vision
+        time:
+          type: string
+          format: date-time
+          description: Current server time.
+          example: '2026-08-11T10:00:00Z'
+
+    VisionRequest:
+      oneOf:
+        - $ref: '#/components/schemas/VisionImageUrlRequest'
+        - $ref: '#/components/schemas/VisionImageBase64Request'
+      discriminator:
+        propertyName: inputType
+        mapping:
+          IMAGE_URL: '#/components/schemas/VisionImageUrlRequest'
+          IMAGE_BASE64: '#/components/schemas/VisionImageBase64Request'
+
+    VisionImageUrlRequest:
+      type: object
+      additionalProperties: false
+      required: [inputType, imageUrl, correlationId]
+      properties:
+        inputType:
+          type: string
+          const: IMAGE_URL
+          description: Indicates the request contains an image URL.
+          example: IMAGE_URL
+        imageUrl:
+          type: string
+          format: uri
+          description: Publicly accessible image URL for AI Vision.
+          example: https://images.smartcampus.local/camera-01/frame-20260811-100000.jpg
+        correlationId:
+          type: string
+          format: uuid
+          description: Consumer correlation ID for tracing.
+          example: c2f5f8ae-2f75-4f0f-9e7c-1c9b40f2a4b1
+
+    VisionImageBase64Request:
+      type: object
+      additionalProperties: false
+      required: [inputType, imageBase64, contentType, correlationId]
+      properties:
+        inputType:
+          type: string
+          const: IMAGE_BASE64
+          description: Indicates the request contains inline image data.
+          example: IMAGE_BASE64
+        imageBase64:
+          type: string
+          description: Base64-encoded JPEG or PNG image.
+          example: /9j/4AAQSkZJRgABAQAAAQABAAD/2wCEAAkGBxISEhUREhIWFRUVFRUYFhUVFRUWFRcVFxUXFhUVFRUYHSggGBolGxUVITEhJSkrLi4uFx8zODMsNygtLisBCgoKDg0OGxAQGy0lICUtLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLf/AABEIAMIBAwMBIgACEQEDEQH
+        contentType:
+          type: string
+          enum: [image/jpeg, image/png]
+          description: MIME type of the encoded image.
+          example: image/jpeg
+        correlationId:
+          type: string
+          format: uuid
+          description: Consumer correlation ID for tracing.
+          example: 7b5e14d4-8fca-4e43-b3c7-1f3a5e4397f4
+
+    VisionDetectionAccepted:
+      type: object
+      additionalProperties: false
+      required: [detectionId, status, receivedAt]
+      properties:
+        detectionId:
+          type: string
+          format: uuid
+          description: UUID of the submitted detection request.
+          example: 0a2f7b39-8c3f-4f6d-bb3f-e2f4b37062d0
+        status:
+          type: string
+          enum: [PROCESSING, COMPLETED, FAILED]
+          description: Current processing status.
+          example: PROCESSING
+        receivedAt:
+          type: string
+          format: date-time
+          description: Time the request was accepted.
+          example: '2026-08-11T10:00:00Z'
+        modelVersion:
+          type: [string, 'null']
+          description: Optional model version used for detection.
+          example: v2.1.0
+
+    VisionDetectionResult:
+      type: object
+      additionalProperties: false
+      required: [detectionId, status, detectedAt, objects, riskLevel]
+      properties:
+        detectionId:
+          type: string
+          format: uuid
+          description: UUID of the detection request.
+          example: 0a2f7b39-8c3f-4f6d-bb3f-e2f4b37062d0
+        status:
+          type: string
+          enum: [PROCESSING, COMPLETED, FAILED]
+          description: Detection processing status.
+          example: COMPLETED
+        detectedAt:
+          type: string
+          format: date-time
+          description: When the detection finished.
+          example: '2026-08-11T10:00:03Z'
+        objects:
+          type: array
+          minItems: 0
+          items:
+            $ref: '#/components/schemas/VisionObject'
+        riskLevel:
+          type: string
+          enum: [LOW, MEDIUM, HIGH, CRITICAL]
+          description: Risk level assigned by AI Vision.
+          example: MEDIUM
+        modelVersion:
+          type: [string, 'null']
+          description: Model version used to compute this result.
+          example: v2.1.0
+        notes:
+          type: [string, 'null']
+          description: Optional analysis notes.
+          example: null
+
+    VisionObject:
+      type: object
+      additionalProperties: false
+      required: [type, confidence, boundingBox]
+      properties:
+        type:
+          type: string
+          description: Detected object category.
+          example: person
+        confidence:
+          type: number
+          minimum: 0
+          maximum: 1
+          description: Confidence score.
+          example: 0.93
+        boundingBox:
+          type: object
+          additionalProperties: false
+          required: [x, y, width, height]
+          properties:
+            x:
+              type: integer
+              minimum: 0
+              description: X coordinate of top-left corner.
+              example: 112
+            y:
+              type: integer
+              minimum: 0
+              description: Y coordinate of top-left corner.
+              example: 56
+            width:
+              type: integer
+              minimum: 1
+              description: Width of bounding box in pixels.
+              example: 84
+            height:
+              type: integer
+              minimum: 1
+              description: Height of bounding box in pixels.
+              example: 220
+
+    VisionModelInfo:
+      type: object
+      additionalProperties: false
+      required: [modelName, modelVersion, supportedTypes, updatedAt]
+      properties:
+        modelName:
+          type: string
+          description: Model name.
+          example: campus-vision
+        modelVersion:
+          type: string
+          description: Model version.
+          example: v2.1.0
+        supportedTypes:
+          type: array
+          minItems: 1
+          items:
+            type: string
+          description: Supported detection categories.
+          example: [person, vehicle, package]
+        updatedAt:
+          type: string
+          format: date-time
+          description: Last metadata update time.
+          example: '2026-08-10T12:00:00Z'
+
+    Problem:
+      type: object
+      additionalProperties: false
+      required: [type, title, status]
+      properties:
+        type:
+          type: string
+          format: uri
+          description: Problem type URI.
+          example: https://campus.local/errors/validation
+        title:
+          type: string
+          description: Short title for the problem.
+          example: Invalid request payload
+        status:
+          type: integer
+          minimum: 400
+          maximum: 599
+          description: HTTP status code.
+          example: 400
+        detail:
+          type: [string, 'null']
+          description: Detailed problem explanation.
+          example: Image data is missing or malformed.
+        instance:
+          type: [string, 'null']
+          description: Request URI that caused the problem.
+          example: /vision/detect
+        errors:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            required: [field, code, message]
+            properties:
+              field:
+                type: string
+                description: Field where the error occurred.
+                example: inputType
+              code:
+                type: string
+                description: Error code.
+                example: ENUM_MISMATCH
+              message:
+                type: string
+                description: Human-readable error message.
+                example: inputType must be IMAGE_URL or IMAGE_BASE64
+
+  responses:
+    BadRequest:
+      description: Invalid request payload
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          example:
+            type: https://campus.local/errors/validation
+            title: Invalid request payload
+            status: 400
+            detail: inputType must be IMAGE_URL or IMAGE_BASE64
+            instance: /vision/detect
+            errors:
+              - field: inputType
+                code: ENUM_MISMATCH
+                message: inputType must be IMAGE_URL or IMAGE_BASE64
+
+    Unauthorized:
+      description: Missing or invalid authentication
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          example:
+            type: https://campus.local/errors/unauthorized
+            title: Unauthorized
+            status: 401
+            detail: Missing Bearer token
+            instance: /vision/detect
+            errors: []
+
+    NotFound:
+      description: Resource not found
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+
+    UnprocessableEntity:
+      description: Semantic validation failed
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          example:
+            type: https://campus.local/errors/semantic
+            title: Unprocessable entity
+            status: 422
+            detail: imageUrl must point to an accessible JPEG or PNG image
+            instance: /vision/detect
+            errors:
+              - field: imageUrl
+                code: URL_NOT_ACCESSIBLE
+                message: imageUrl must be a reachable image URL
+
+    InternalServerError:
+      description: Unexpected server error
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          example:
+            type: https://campus.local/errors/internal
+            title: Internal server error
+            status: 500
+            detail: Unexpected processing failure
+            instance: /vision/detect
+            errors: []

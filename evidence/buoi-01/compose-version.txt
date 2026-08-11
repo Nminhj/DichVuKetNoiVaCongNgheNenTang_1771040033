@@ -1,0 +1,1 @@
+Docker Compose version: unavailable in the current environment; please run `docker compose version` locally and save the output here.

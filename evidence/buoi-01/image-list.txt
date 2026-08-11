@@ -1,0 +1,6 @@
+hello-world
+python:3.11-slim
+node:20-alpine
+nginx:alpine
+redis:7-alpine
+registry:2
